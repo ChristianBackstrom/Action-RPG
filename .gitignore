@@ -72,3 +72,5 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+.idea/.idea.ARPG_AKC.dir/.idea/workspace.xml
+.idea/.idea.ARPG_AKC.dir/.idea/indexLayout.xml
