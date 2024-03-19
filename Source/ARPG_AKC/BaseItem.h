@@ -32,8 +32,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Item Info")
 	UItemDataAsset* ItemDataAsset;
-
-	UPROPERTY(EditAnywhere, Category = "Item Info")
+	
 	EItemType ItemType = EItemType::None;
 
 	UPROPERTY(EditAnywhere, Category = "Item Info")
