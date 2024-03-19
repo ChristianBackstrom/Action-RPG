@@ -8,19 +8,20 @@
 UENUM()
 enum class EItemRarity : uint8
 {
-	Common,
-	Uncommon,
-	Rare,
-	Unique
+	Common UMETA(DisplayName = "Common"),
+	Uncommon UMETA(DisplayName = "Uncommon"),
+	Rare UMETA(DisplayName = "Rare"),
+	Unique UMETA(DisplayName = "Unique")
 };
 
 UENUM()
 enum class EItemType : uint8
 {
-	Weapon,
-	Armor,
-	Accessory,
-	Consumable
+	None UMETA(DisplayName = "None"), 
+	Weapon UMETA(DisplayName = "Weapon"),
+	Armor UMETA(DisplayName = "Armor"),
+	Accessory UMETA(DisplayName = "Accessory"),
+	Consumable UMETA(DisplayName = "Consumable")
 };
 
 USTRUCT()
@@ -43,14 +44,16 @@ struct FItemStats
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "ItemType == EItemType::Weapon"))
 	float DamageValue;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "ItemType == EItemType::Armor"))
 	float ArmorValue;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "ItemType == EItemType::Consumable"))
 	float ConsumableValue;
+
+	EItemType ItemType;
 };
 
 USTRUCT()
