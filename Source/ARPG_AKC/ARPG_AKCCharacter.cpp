@@ -1,9 +1,11 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "ARPG_AKCCharacter.h"
+
+#include "StandardAttributeSet.h"
+#include "AbilitySystemComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
-#include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -43,6 +45,18 @@ AARPG_AKCCharacter::AARPG_AKCCharacter()
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>("AbilitySystemComponent");
+}
+
+void AARPG_AKCCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (IsValid(AbilitySystemComponent))
+	{
+		StandardAttributeSet = AbilitySystemComponent->GetSet<UStandardAttributeSet>();
+	}
 }
 
 void AARPG_AKCCharacter::Tick(float DeltaSeconds)

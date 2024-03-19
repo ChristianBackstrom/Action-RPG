@@ -14,19 +14,24 @@ class ARPG_AKC_API UStandardAttributeSet : public UAttributeSet
 
 public:
 	ATTRIBUTE_ACCESSORS(UStandardAttributeSet, Health);
-	ATTRIBUTE_ACCESSORS(UStandardAttributeSet, HealthMax);
-	ATTRIBUTE_ACCESSORS(UStandardAttributeSet, Damage)
+	ATTRIBUTE_ACCESSORS(UStandardAttributeSet, MaxHealth);
+	ATTRIBUTE_ACCESSORS(UStandardAttributeSet, Mana);
+	ATTRIBUTE_ACCESSORS(UStandardAttributeSet, MaxMana);
 	
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
 	FGameplayAttributeData Health;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
-	FGameplayAttributeData HealthMax;
+	FGameplayAttributeData MaxHealth;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
-	FGameplayAttributeData Damage;
+	FGameplayAttributeData Mana;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Health")
+	FGameplayAttributeData MaxMana;
 	
-	
+
+	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	
 };
