@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "DataLibrary.h"
 #include "GameFramework/Actor.h"
 #include "BaseItem.generated.h"
 
@@ -20,24 +19,26 @@ public:
 	// Sets default values for this actor's properties
 	ABaseItem();
 
+	UPROPERTY(EditAnywhere, Category = "Component")
+	UStaticMeshComponent* MeshComponent;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, Category = "Component")
-	UStaticMeshComponent* MeshComponent;
+	
 
 	UPROPERTY(EditAnywhere, Category = "Component")
 	USphereComponent* SphereComponent;
 
-	UPROPERTY(EditAnywhere, Category = "Item Info")
-	UItemDataAsset* ItemDataAsset;
-	
-	UPROPERTY(VisibleAnywhere, Category = "Item Info")
-	EItemType ItemType = EItemType::None; // Probably will change this later on
+	UPROPERTY(EditAnywhere)
+	UDataTable* LootTable;
 
-	UPROPERTY(VisibleAnywhere, Category = "Item Info")
-	FItemGenericInfo ItemGenericInfo;
+	UPROPERTY(EditAnywhere)
+	bool bGenerate = false;
+	void GenerateLoot() const;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<ABaseItem> BaseItemActor;
 	
 #ifdef UE_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
