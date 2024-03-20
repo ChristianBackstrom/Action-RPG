@@ -8,10 +8,10 @@
 UENUM()
 enum class EItemRarity : uint8
 {
-	Common UMETA(DisplayName = "Common"),
-	Uncommon UMETA(DisplayName = "Uncommon"),
-	Rare UMETA(DisplayName = "Rare"),
-	Unique UMETA(DisplayName = "Unique")
+	Common UMETA(DisplayName = "Common") ,
+	Uncommon UMETA(DisplayName = "Uncommon") ,
+	Rare UMETA(DisplayName = "Rare") ,
+	Unique UMETA(DisplayName = "Unique") 
 };
 
 UENUM()
@@ -60,9 +60,6 @@ USTRUCT()
 struct FItemNumericData
 {
 	GENERATED_BODY()
-	
-	UPROPERTY(EditAnywhere)
-	float Weight;
 	
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "bIsStackable", ClampMin = 0, ClampMax = 500))
 	int32 MaxStackSize;
