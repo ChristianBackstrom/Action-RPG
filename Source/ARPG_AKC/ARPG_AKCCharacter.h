@@ -7,6 +7,8 @@
 #include "GameFramework/Character.h"
 #include "ARPG_AKCCharacter.generated.h"
 
+class UGameplayAbility;
+
 UCLASS(Blueprintable)
 class AARPG_AKCCharacter : public ACharacter, public IAbilitySystemInterface
 {
@@ -35,6 +37,9 @@ private:
 	class USpringArmComponent* CameraBoom;
 
 protected:
+	UPROPERTY(EditAnywhere, Category ="GAS", meta = (AllowPrivateAccess = "true"))
+	TArray<TSubclassOf<UGameplayAbility>> StartAbilities;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category ="GAS", meta = (AllowPrivateAccess = "true"))
 	class UAbilitySystemComponent* AbilitySystemComponent;
 

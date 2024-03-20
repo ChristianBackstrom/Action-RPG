@@ -57,6 +57,14 @@ void AARPG_AKCCharacter::BeginPlay()
 	{
 		StandardAttributeSet = AbilitySystemComponent->GetSet<UStandardAttributeSet>();
 	}
+
+	if (IsValid(AbilitySystemComponent))
+	{
+		for (const auto& Ability : StartAbilities)
+		{
+			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(Ability.GetDefaultObject(), 0, -1));
+		}
+	}
 }
 
 void AARPG_AKCCharacter::Tick(float DeltaSeconds)
