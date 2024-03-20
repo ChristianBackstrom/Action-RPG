@@ -35,45 +35,36 @@ void AEnemyActor::Tick(float DeltaTime)
 
 void AEnemyActor::GenerateLoot() const
 {
-	static const FString ContextString(TEXT("Loot Table Context"));
-	
-	if (LootTable)
-	{
-		TArray<FName> RowNames = LootTable->GetRowNames();
-	 	
-		if (RowNames.Num() > 0)
-		{
-			float TotalWeight = 0;
-			for (const FName RowName : RowNames)
-			{
-				if (const FLootTable* LootRow = LootTable->FindRow<FLootTable>(RowName, ContextString))
-				{
-					TotalWeight += LootRow->Weight;
-				}
-			}
+	if (!LootTable) return;
+	const FString ContextString(TEXT("Loot Table Context"));
+	const TArray<FName> RowNames = LootTable->GetRowNames();
+	if (RowNames.Num() == 0) return;
 
-			for (int i = 0; i < NumItemsToSpawn; ++i)
+	float TotalWeight = 0;
+	for (const FName RowName : RowNames)
+	{
+		if (const FLootTable* LootRow = LootTable->FindRow<FLootTable>(RowName, ContextString))
+		{
+			TotalWeight += LootRow->Weight;
+		}
+	}
+
+	for (int i = 0; i < NumItemsToSpawn; ++i)
+	{
+		const float RandomWeight = FMath::FRandRange(0, TotalWeight);
+		float CurrentWeight = 0;
+		for (const FName RowName : RowNames)
+		{
+			if (const FLootTable* LootRow = LootTable->FindRow<FLootTable>(RowName, ContextString))
 			{
-				const float RandomWeight = FMath::FRandRange(0, TotalWeight);
-        	
-				float CurrentWeight = 0;
-				for (const FName RowName : RowNames)
+				CurrentWeight += LootRow->Weight;
+				if (CurrentWeight > RandomWeight)
 				{
-					if (const FLootTable* LootRow = LootTable->FindRow<FLootTable>(RowName, ContextString))
+					if (const UItemDataAsset* SelectedItem = LootRow->ItemDataAsset)
 					{
-						CurrentWeight += LootRow->Weight;
-        			
-						if (CurrentWeight > RandomWeight)
-						{
-							UE_LOG(LogTemp, Warning, TEXT("Random weight: %f, Current weight: %f"), RandomWeight, CurrentWeight);
-						
-							if (const UItemDataAsset* SelectedItem = LootRow->ItemDataAsset)
-							{
-								SpawnLootAroundEnemy(SelectedItem, 100);
-							}
-							break;
-						}
+						SpawnLootAroundEnemy(SelectedItem, 100);
 					}
+					break;
 				}
 			}
 		}
@@ -83,17 +74,14 @@ void AEnemyActor::GenerateLoot() const
 
 void AEnemyActor::SpawnLootAroundEnemy(const UItemDataAsset* ItemData, float Radius) const
 {
-	FVector2D EnemyLocation2D = FVector2D(GetActorLocation().X, GetActorLocation().Y);
-	FRotator EnemyRotation = GetActorRotation();
-	
-	FVector2D RandomPoint = FMath::RandPointInCircle(Radius);
-	FVector SpawnLocation = FVector(RandomPoint.X + EnemyLocation2D.X, RandomPoint.Y + EnemyLocation2D.Y, GetActorLocation().Z);
-        
+	const FVector2D EnemyLocation2D(GetActorLocation().X, GetActorLocation().Y);
+	const FRotator EnemyRotation = GetActorRotation();
+	const FVector2D RandomPoint = FMath::RandPointInCircle(Radius);
+	const FVector SpawnLocation(RandomPoint.X + EnemyLocation2D.X, RandomPoint.Y + EnemyLocation2D.Y, GetActorLocation().Z);
+
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	
 	ABaseItem* Item = GetWorld()->SpawnActor<ABaseItem>(BaseItemActor, SpawnLocation, EnemyRotation, SpawnParameters);
 	Item->MeshComponent->SetStaticMesh(ItemData->ItemGenericInfo.Mesh);
-	
 }
 
