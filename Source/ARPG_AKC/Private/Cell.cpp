@@ -11,9 +11,10 @@ void UCell::Initialize(const FVector2D InGridPosition, const TArray<TSubclassOf<
 	SetPossibleTiles(AllTiles);
 }
 
-void UCell::Collapse()
+bool UCell::Collapse()
 {
-	if (bIsCollapsed) return;
+	if (bIsCollapsed) return false;
+	if (PossibleTiles.Num() == 0) return false;
 
 	float TotalWeight = 0.0f;
 	for (float Weight : TileWeights)
@@ -30,8 +31,8 @@ void UCell::Collapse()
 		CurrentWeight += TileWeights[SelectedIndex];
 		if (CurrentWeight >= RandomWeight) break;
 	}
-
 	SetCollapsedTile(PossibleTiles[SelectedIndex]);
+	return true;
 }
 
 void UCell::SetCollapsedTile(TSubclassOf<ATile> Tile)

@@ -16,11 +16,11 @@ class ARPG_AKC_API UCell : public UObject
 	GENERATED_BODY()
 
 public:
-	bool bIsCollapsed;
+	bool bIsCollapsed = false;
 	FVector2D GridPosition;
 
 	void Initialize(FVector2D InGridPosition, const TArray<TSubclassOf<ATile>>& AllTiles);
-	void Collapse();
+	bool Collapse();
 	
 	TArray<float> GetTileWeights() const { return TileWeights; }
 	TArray<TSubclassOf<ATile>> GetPossibleTiles() const { return PossibleTiles; }

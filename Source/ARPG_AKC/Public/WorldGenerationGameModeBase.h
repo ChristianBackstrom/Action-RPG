@@ -20,18 +20,22 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	TArray<TSubclassOf<ATile>> AllTiles;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	int32 GridSize = 100;
 	
 	void GenerateWorld();
-	void UpdateConstraintsForNeighborCells(const FVector2D& CollapsedCellPosition);
-	void RefineValidTilesForCell(UCell* CellToUpdate, const FVector2D& CollapsedNeighborPosition);
 	
-	UCell* GetCell(const FVector2D& GridPosition);
-	void SpawnTileForCell(const UCell* Cell, FVector2D GridPosition) const;
+	void Propagate(UCell* CollapsedCell);
+	bool ApplyDirectionalConstraints(UCell* CellToUpdate, const UCell* CollapsedNeighborCell);
+
+	TArray<UCell*> GetNeighbors(FVector2D GridPosition) const;
+	UCell* GetCell(const FVector2D& GridPosition) const;
+	static FVector2D GetDirection(const FVector2D From, const FVector2D To);
+	void SpawnTileForCell(const UCell* Cell) const;
 	static FVector CalculateWorldLocation(FVector2D GridPosition);
-	
-	int32 GridSize = 100;
 
 private:
 	TArray<TArray<UCell*>> Grid;
-	TArray<UCell*> CellsWithCollapsedNeighbors;
+	TSet<UCell*> LowerEntropyCells;
 };

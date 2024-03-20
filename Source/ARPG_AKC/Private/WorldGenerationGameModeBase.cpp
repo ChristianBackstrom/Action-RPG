@@ -27,96 +27,144 @@ void AWorldGenerationGameModeBase::GenerateWorld()
 		}
 	}
 
-	Grid[GridSize / 2][GridSize / 2]->Collapse();
-	UpdateConstraintsForNeighborCells(FVector2D(GridSize/2, GridSize/2));
-	SpawnTileForCell(Grid[GridSize / 2][GridSize / 2], Grid[GridSize / 2][GridSize / 2]->GridPosition);
-	
+	UCell* FirstCell = GetCell(FVector2D(GridSize / 2, GridSize / 2));
+	FirstCell->SetCollapsedTile(AllTiles[0]);
+	Propagate(FirstCell);
+	SpawnTileForCell(FirstCell);
 	
 	int IterationsLeft = GridSize * GridSize - 1;
 	while(IterationsLeft > 0)
 	{
-		UCell* LowestEntropyCell = CellsWithCollapsedNeighbors[0];
-		for (UCell* Cell : CellsWithCollapsedNeighbors)
+		UCell* LowestEntropyCell = nullptr;
+		for (UCell* Cell : LowerEntropyCells)
 		{
+			if (!LowestEntropyCell)
+			{
+				LowestEntropyCell = Cell;
+				continue;
+			}
 			if (LowestEntropyCell->GetEntropy() < Cell->GetEntropy())
 			{
 				LowestEntropyCell = Cell;
 			}
 		}
 		LowestEntropyCell->Collapse();
-		SpawnTileForCell(LowestEntropyCell, LowestEntropyCell->GridPosition);
-		UpdateConstraintsForNeighborCells(LowestEntropyCell->GridPosition);
-		CellsWithCollapsedNeighbors.Remove(LowestEntropyCell);
+		SpawnTileForCell(LowestEntropyCell);
+		Propagate(LowestEntropyCell);
+		LowerEntropyCells.Remove(LowestEntropyCell);
 		IterationsLeft--;
+		UE_LOG(LogTemp, Warning, TEXT("%d Tiles remaining"), IterationsLeft);
+		UE_LOG(LogTemp, Warning, TEXT("%d LowerEntrpyCells"), LowerEntropyCells.Num());
 	}
 }
 
-void AWorldGenerationGameModeBase::UpdateConstraintsForNeighborCells(const FVector2D& CollapsedCellPosition)
+void AWorldGenerationGameModeBase::Propagate(UCell* CollapsedCell)
 {
-	TArray Offsets =
-	{
-		FVector2D(0, -1), // North
-		FVector2D(1, -1), // North East
-		FVector2D(1, 0),  // East
-		FVector2D(1, 1),  // South East
-		FVector2D(0, 1),  // South
-		FVector2D(-1, 1), // South West
-		FVector2D(-1, 0), // West
-		FVector2D(-1, -1) // North West
-	};
+	TQueue<UCell*> CellsToUpdate;
+	TSet<UCell*> EnqueuedCells;
 
-	for (const FVector2D& Offset : Offsets)
+	CellsToUpdate.Enqueue(CollapsedCell);
+	EnqueuedCells.Add(CollapsedCell);
+
+	while (!CellsToUpdate.IsEmpty())
 	{
-		FVector2D NeighborPosition = CollapsedCellPosition + Offset;
-		UCell* NeighborCell = GetCell(NeighborPosition);
-        
-		if (NeighborCell && !NeighborCell->bIsCollapsed)
+		UCell* CurrentCell;
+		CellsToUpdate.Dequeue(CurrentCell);
+
+		TArray<UCell*> Neighbors = GetNeighbors(CurrentCell->GridPosition);
+		for (UCell* Neighbor : Neighbors)
 		{
-			RefineValidTilesForCell(NeighborCell, CollapsedCellPosition);
-			if (!CellsWithCollapsedNeighbors.Contains(NeighborCell))
+			if (Neighbor->bIsCollapsed || EnqueuedCells.Contains(Neighbor)) continue;
+
+			if (ApplyDirectionalConstraints(Neighbor, CurrentCell))
 			{
-				CellsWithCollapsedNeighbors.Add(NeighborCell);
+				LowerEntropyCells.Add(Neighbor);
+			}
+			{
+				CellsToUpdate.Enqueue(Neighbor);
+				EnqueuedCells.Add(Neighbor);
 			}
 		}
 	}
 }
 
-
-void AWorldGenerationGameModeBase::RefineValidTilesForCell(UCell* CellToUpdate, const FVector2D& CollapsedNeighborPosition)
+bool AWorldGenerationGameModeBase::ApplyDirectionalConstraints(UCell* CellToUpdate, const UCell* CollapsedNeighborCell)
 {
-	const UCell* CollapsedNeighborCell = GetCell(CollapsedNeighborPosition);
-	if (!CollapsedNeighborCell || !CollapsedNeighborCell->bIsCollapsed) return;
-
-	const TSubclassOf<ATile> CollapsedTile = CollapsedNeighborCell->GetCollapsedTile();
-
+	if (!CellToUpdate || CellToUpdate->bIsCollapsed) return false;
+	if (!CollapsedNeighborCell || !CollapsedNeighborCell->bIsCollapsed) return false;
+	
 	TArray<TSubclassOf<ATile>> NewPossibleTiles;
+	const FVector2D Direction = GetDirection(CellToUpdate->GridPosition, CollapsedNeighborCell->GridPosition);
+	
+	if (Direction == FVector2D(0, 0)) return false;
+	
 	for (TSubclassOf<ATile> PossibleTile : CellToUpdate->GetPossibleTiles())
 	{
-		if (CollapsedTile.GetDefaultObject()->CanNeighbor(PossibleTile))
+		if (PossibleTile.GetDefaultObject()->CanNeighbor(CollapsedNeighborCell->GetCollapsedTile(), Direction))
 		{
 			NewPossibleTiles.Add(PossibleTile);
 		}
 	}
-
-	CellToUpdate->SetPossibleTiles(NewPossibleTiles);
+	
+	const bool bChanged = NewPossibleTiles.Num() != CellToUpdate->GetEntropy();
+	if (bChanged)
+	{
+		CellToUpdate->SetPossibleTiles(NewPossibleTiles);
+		LowerEntropyCells.Add(CellToUpdate);
+	}
+	
+	return bChanged;
 }
 
-UCell* AWorldGenerationGameModeBase::GetCell(const FVector2D& GridPosition)
+TArray<UCell*> AWorldGenerationGameModeBase::GetNeighbors(FVector2D GridPosition) const
+{
+	TArray<UCell*> Neighbors;
+	
+	TArray Directions =
+	{
+		FVector2D(0, -1), // North
+		FVector2D(1, 0),  // East
+		FVector2D(0, 1),  // South
+		FVector2D(-1, 0), // West
+	};
+
+	for (const FVector2D& Direction : Directions)
+	{
+		FVector2D NeighborPosition = GridPosition + Direction;
+		UCell* NeighborCell = GetCell(NeighborPosition);
+        
+		if (!NeighborCell) continue;
+
+		Neighbors.Add(NeighborCell);
+	}
+	return Neighbors;
+}
+
+UCell* AWorldGenerationGameModeBase::GetCell(const FVector2D& GridPosition) const
 {
 	if (GridPosition.X < 0 || GridPosition.X >= GridSize || GridPosition.Y < 0 || GridPosition.Y >= GridSize) return nullptr;
 
 	return Grid[GridPosition.X][GridPosition.Y];
 }
 
-void AWorldGenerationGameModeBase::SpawnTileForCell(const UCell* Cell, FVector2D GridPosition) const
+FVector2D AWorldGenerationGameModeBase::GetDirection(const FVector2D From, const FVector2D To)
+{
+	const FVector2D Direction = To - From;
+	
+	if (FMath::Abs(Direction.X) + FMath::Abs(Direction.Y) != 1) return FVector2D(0, 0);
+
+	return Direction;
+}
+
+void AWorldGenerationGameModeBase::SpawnTileForCell(const UCell* Cell) const
 {
 	if (!Cell || !Cell->bIsCollapsed) return;
 
-	const FVector Location = CalculateWorldLocation(GridPosition); // Implement this based on your grid-to-world mapping
-	const FRotator Rotation = FRotator(0); // Adjust as needed
+	const FVector Location = CalculateWorldLocation(Cell->GridPosition);
+	const FRotator Rotation = FRotator(0);
 
 	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	GetWorld()->SpawnActor<ATile>(Cell->GetCollapsedTile(), Location, Rotation, SpawnParameters);
 }

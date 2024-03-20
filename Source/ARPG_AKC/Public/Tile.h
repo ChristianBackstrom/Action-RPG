@@ -15,12 +15,24 @@ public:
 	ATile();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
-	TArray<TSubclassOf<ATile>> AllowedNeighbors;
+	TArray<TSubclassOf<ATile>> AllowedAllDirectionsNeighbors;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
+	TArray<TSubclassOf<ATile>> AllowedNorthNeighbors;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
+	TArray<TSubclassOf<ATile>> AllowedEastNeighbors;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
+	TArray<TSubclassOf<ATile>> AllowedSouthNeighbors;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
+	TArray<TSubclassOf<ATile>> AllowedWestNeighbors;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
 	float BaseWeight = 1.0f;
 
-	bool CanNeighbor(TSubclassOf<ATile> OtherTile) const { return AllowedNeighbors.Contains(OtherTile); }
+	bool CanNeighbor(TSubclassOf<ATile> OtherTile, const FVector2D& DirectionToNeighbor) const;
 
 protected:
 	virtual void BeginPlay() override;
@@ -28,6 +40,4 @@ protected:
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Tile", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* GroundMesh;
-	
-	TArray<AActor*> ChildActors;
 };
