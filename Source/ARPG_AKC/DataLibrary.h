@@ -64,7 +64,7 @@ struct FItemNumericData
 	UPROPERTY(EditAnywhere)
 	float Weight;
 	
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "!bIsStackable", ClampMin = 0, ClampMax = 500))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bIsStackable", ClampMin = 0, ClampMax = 500))
 	int32 MaxStackSize;
 
 	UPROPERTY(EditAnywhere)

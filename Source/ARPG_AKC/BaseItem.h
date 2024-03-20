@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "BaseItem.generated.h"
 
+class UWidgetComponent;
 class USphereComponent;
 class UItemDataAsset;
 
@@ -19,7 +20,6 @@ public:
 	// Sets default values for this actor's properties
 	ABaseItem();
 
-	virtual void Tick(float DeltaTime) override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -33,9 +33,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Item Info")
 	UItemDataAsset* ItemDataAsset;
 	
-	EItemType ItemType = EItemType::None;
+	UPROPERTY(VisibleAnywhere, Category = "Item Info")
+	EItemType ItemType = EItemType::None; // Probably will change this later on
 
-	UPROPERTY(EditAnywhere, Category = "Item Info")
+	UPROPERTY(VisibleAnywhere, Category = "Item Info")
 	FItemGenericInfo ItemGenericInfo;
 	
 #ifdef UE_EDITOR

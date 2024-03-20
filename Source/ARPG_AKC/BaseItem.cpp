@@ -10,13 +10,14 @@
 ABaseItem::ABaseItem()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
 	SetRootComponent(MeshComponent);
 
 	SphereComponent = CreateDefaultSubobject<USphereComponent>("Collider");
 	SphereComponent->SetupAttachment(MeshComponent);
+	
 }
 
 // Called when the game starts or when spawned
@@ -34,23 +35,8 @@ void ABaseItem::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 
 	if(ItemDataAsset)
 	{
-		for (int i = 0; i < ItemDataAsset->ItemGenericInfos.Num(); ++i)
-		{
-			if(ItemDataAsset->ItemGenericInfos[i].ItemType == ItemType)
-			{
-				ItemGenericInfo = ItemDataAsset->ItemGenericInfos[i];
-
-				MeshComponent->SetStaticMesh(ItemGenericInfo.Mesh);
-				break;
-			}
-		}
+		ItemGenericInfo = ItemDataAsset->ItemGenericInfo;
+		
+		MeshComponent->SetStaticMesh(ItemGenericInfo.Mesh);
 	}
 }
-
-// Called every frame
-void ABaseItem::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
