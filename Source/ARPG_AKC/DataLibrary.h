@@ -8,10 +8,10 @@
 UENUM()
 enum class EItemRarity : uint8
 {
-	Common UMETA(DisplayName = "Common"),
-	Uncommon UMETA(DisplayName = "Uncommon"),
-	Rare UMETA(DisplayName = "Rare"),
-	Unique UMETA(DisplayName = "Unique")
+	Common = 100 UMETA(DisplayName = "Common") ,
+	Uncommon = 75 UMETA(DisplayName = "Uncommon") ,
+	Rare = 20 UMETA(DisplayName = "Rare") ,
+	Unique = 2 UMETA(DisplayName = "Unique") 
 };
 
 UENUM()
@@ -61,10 +61,7 @@ struct FItemNumericData
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(EditAnywhere)
-	float Weight;
-	
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "!bIsStackable", ClampMin = 0, ClampMax = 500))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bIsStackable", ClampMin = 0, ClampMax = 500))
 	int32 MaxStackSize;
 
 	UPROPERTY(EditAnywhere)
@@ -96,6 +93,35 @@ struct FItemGenericInfo
 
 	UPROPERTY(EditAnywhere)
 	UStaticMesh* Mesh;
+
+	EItemRarity GenerateRandomRarity() const
+	{
+		const float TotalWeight = static_cast<int8>(EItemRarity::Unique) + 
+							  static_cast<int8>(EItemRarity::Rare) + 
+							  static_cast<int8>(EItemRarity::Uncommon) + 
+							  static_cast<int8>(EItemRarity::Common);
+		
+		const float RandomWeight = FMath::FRandRange(1, TotalWeight);
+
+		UE_LOG(LogTemp, Warning, TEXT("RandomWeight: %f"), RandomWeight);
+		
+		if (RandomWeight <= static_cast<int8>(EItemRarity::Unique))
+		{
+			return EItemRarity::Unique;
+		}
+		if (RandomWeight <= static_cast<int8>(EItemRarity::Unique) + static_cast<int8>(EItemRarity::Rare))
+		{
+			return EItemRarity::Rare;
+		}
+		if (RandomWeight <= static_cast<int8>(EItemRarity::Unique) +
+							static_cast<int8>(EItemRarity::Rare) +
+							static_cast<int8>(EItemRarity::Uncommon))
+		{
+			return EItemRarity::Uncommon;
+		}
+		
+		return EItemRarity::Common;
+	}
 };
 
 UCLASS()

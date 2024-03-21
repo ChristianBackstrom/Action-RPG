@@ -2,8 +2,6 @@
 
 
 #include "BaseItem.h"
-
-#include "ItemDataAsset.h"
 #include "Components/SphereComponent.h"
 
 // Sets default values
@@ -12,11 +10,12 @@ ABaseItem::ABaseItem()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
-	SetRootComponent(MeshComponent);
-
+	
 	SphereComponent = CreateDefaultSubobject<USphereComponent>("Collider");
-	SphereComponent->SetupAttachment(MeshComponent);
+	SetRootComponent(SphereComponent);
+
+	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
+	MeshComponent->SetupAttachment(SphereComponent);
 }
 
 // Called when the game starts or when spawned
@@ -30,27 +29,7 @@ void ABaseItem::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if(ItemType == EItemType::None) return;
-
-	if(ItemDataAsset)
-	{
-		for (int i = 0; i < ItemDataAsset->ItemGenericInfos.Num(); ++i)
-		{
-			if(ItemDataAsset->ItemGenericInfos[i].ItemType == ItemType)
-			{
-				ItemGenericInfo = ItemDataAsset->ItemGenericInfos[i];
-
-				MeshComponent->SetStaticMesh(ItemGenericInfo.Mesh);
-				break;
-			}
-		}
-	}
+	//if(bGenerate)
+		//GenerateLoot();
+	
 }
-
-// Called every frame
-void ABaseItem::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-

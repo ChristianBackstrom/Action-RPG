@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DataLibrary.h"
 #include "Engine/DataAsset.h"
 #include "ItemDataAsset.generated.h"
 
-struct FItemGenericInfo;
 /**
  * 
  */
@@ -17,5 +17,5 @@ class ARPG_AKC_API UItemDataAsset : public UPrimaryDataAsset
 	
 public:
 	UPROPERTY(EditAnywhere, Category = "Item Info")
-	TArray<FItemGenericInfo> ItemGenericInfos;
+	FItemGenericInfo ItemGenericInfo;
 };
