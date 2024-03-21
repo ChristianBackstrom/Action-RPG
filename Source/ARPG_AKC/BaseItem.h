@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "DataLibrary.h"
 #include "BaseItem.generated.h"
 
 class USphereComponent;
@@ -19,6 +20,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Component")
 	UStaticMeshComponent* MeshComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	FItemGenericInfo GenerationInfo;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -27,7 +31,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Component")
 	USphereComponent* SphereComponent;
 
-	
 #ifdef UE_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif

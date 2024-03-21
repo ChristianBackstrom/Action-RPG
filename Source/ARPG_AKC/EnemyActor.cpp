@@ -33,7 +33,7 @@ void AEnemyActor::Tick(float DeltaTime)
 	
 }
 
-void AEnemyActor::GenerateLoot() const
+void AEnemyActor::GenerateLoot()
 {
 	if (!LootTable) return;
 	const FString ContextString(TEXT("Loot Table Context"));
@@ -49,39 +49,70 @@ void AEnemyActor::GenerateLoot() const
 		}
 	}
 
-	for (int i = 0; i < NumItemsToSpawn; ++i)
-	{
-		const float RandomWeight = FMath::FRandRange(0, TotalWeight);
-		float CurrentWeight = 0;
-		for (const FName RowName : RowNames)
-		{
-			if (const FLootTable* LootRow = LootTable->FindRow<FLootTable>(RowName, ContextString))
-			{
-				CurrentWeight += LootRow->Weight;
-				if (CurrentWeight > RandomWeight)
-				{
-					if (const UItemDataAsset* SelectedItem = LootRow->ItemDataAsset)
-					{
-						SpawnLootAroundEnemy(SelectedItem, 100);
-					}
-					break;
-				}
-			}
-		}
-	}
+	int TotalRarityWeight = NumItemsToSpawn; // Initialize with base number of items to spawn
+    for (int i = 0; i < NumItemsToSpawn; i++)
+    {
+        const float RandomWeight = FMath::FRandRange(0, TotalWeight);
+        float CurrentWeight = 0;
+        for (const FName RowName : RowNames)
+        {
+            if (const FLootTable* LootRow = LootTable->FindRow<FLootTable>(RowName, ContextString))
+            {
+                CurrentWeight += LootRow->Weight;
+                if (CurrentWeight > RandomWeight)
+                {
+                    if (const UItemDataAsset* SelectedItem = LootRow->ItemDataAsset)
+                    {
+                        SpawnLootAroundEnemy(SelectedItem, 300, TotalRarityWeight);
+                        TotalRarityWeight--; // Decrease rarity weight after each spawn
+                    }
+                    break;
+                }
+            }
+        }
+    }    
+	
+	//Just to remove the enemy from the screen but not destroy (for debugging purposes)
 	MeshComponent->SetVisibility(false);
+	MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
-void AEnemyActor::SpawnLootAroundEnemy(const UItemDataAsset* ItemData, float Radius) const
+
+void AEnemyActor::SpawnLootAroundEnemy(const UItemDataAsset* ItemData, float Radius, int RarityWeight) const
 {
 	const FVector2D EnemyLocation2D(GetActorLocation().X, GetActorLocation().Y);
 	const FRotator EnemyRotation = GetActorRotation();
 	const FVector2D RandomPoint = FMath::RandPointInCircle(Radius);
 	const FVector SpawnLocation(RandomPoint.X + EnemyLocation2D.X, RandomPoint.Y + EnemyLocation2D.Y, GetActorLocation().Z);
-
+	
+	FItemGenericInfo NewItemInfo = ItemData->ItemGenericInfo;
+	
+	NewItemInfo.ItemRarity = NewItemInfo.GenerateRandomRarity();
+	
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	
 	ABaseItem* Item = GetWorld()->SpawnActor<ABaseItem>(BaseItemActor, SpawnLocation, EnemyRotation, SpawnParameters);
 	Item->MeshComponent->SetStaticMesh(ItemData->ItemGenericInfo.Mesh);
+	
+	Item->GenerationInfo = NewItemInfo;
+
+	// Make rarity have an effect with num of items spawned WIP
+	if(Item->GenerationInfo.ItemRarity == EItemRarity::Unique)
+	{
+		RarityWeight += 5;
+	}
+	else if(Item->GenerationInfo.ItemRarity == EItemRarity::Rare)
+	{
+		RarityWeight += 3;
+	}
+	else if(Item->GenerationInfo.ItemRarity == EItemRarity::Uncommon)
+	{
+		RarityWeight += 2;
+	}
+	else
+	{
+		RarityWeight++;
+	}
 }
 

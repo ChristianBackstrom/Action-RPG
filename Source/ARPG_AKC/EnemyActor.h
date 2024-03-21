@@ -35,12 +35,10 @@ protected:
 	UPROPERTY(EditAnywhere)
 	bool bGenerate = false;
 	
-	void GenerateLoot() const;
+	void GenerateLoot();
 	
-	void SpawnLootAroundEnemy(const UItemDataAsset* ItemData, float Radius) const;
+	void SpawnLootAroundEnemy(const UItemDataAsset* ItemData, float Radius, int RarityWeight) const;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ABaseItem> BaseItemActor;
-	
-
 };
