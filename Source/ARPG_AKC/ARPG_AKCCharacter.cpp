@@ -1,9 +1,11 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "ARPG_AKCCharacter.h"
+
+#include "StandardAttributeSet.h"
+#include "AbilitySystemComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
-#include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -26,7 +28,7 @@ AARPG_AKCCharacter::AARPG_AKCCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 640.f, 0.f);
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
-
+	
 	// Create a camera boom...
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -43,6 +45,26 @@ AARPG_AKCCharacter::AARPG_AKCCharacter()
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>("AbilitySystemComponent");
+}
+
+void AARPG_AKCCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (IsValid(AbilitySystemComponent))
+	{
+		StandardAttributeSet = AbilitySystemComponent->GetSet<UStandardAttributeSet>();
+	}
+
+	if (IsValid(AbilitySystemComponent))
+	{
+		for (const auto& Ability : StartAbilities)
+		{
+			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(Ability.GetDefaultObject(), 0, -1));
+		}
+	}
 }
 
 void AARPG_AKCCharacter::Tick(float DeltaSeconds)
