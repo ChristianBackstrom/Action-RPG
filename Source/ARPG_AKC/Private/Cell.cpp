@@ -16,14 +16,20 @@ bool UCell::Collapse()
 	if (bIsCollapsed) return false;
 	if (PossibleTiles.Num() == 0) return false;
 
-	float TotalWeight = 0.0f;
-	for (float Weight : TileWeights)
+	for (TSubclassOf<ATile> Tile : PossibleTiles)
+	{
+		if (!Tile)
+			UE_LOG(LogTemp, Warning, TEXT("No tile to spawn for cell at"));
+	}
+
+	int32 TotalWeight = 0.0f;
+	for (int32 Weight : TileWeights)
 	{
 		TotalWeight += Weight;
 	}
 
-	float RandomWeight = FMath::FRandRange(0.0f, TotalWeight);
-	float CurrentWeight = 0.0f;
+	const int32 RandomWeight = FMath::RandRange(0, TotalWeight);
+	int32 CurrentWeight = 0;
 
 	int32 SelectedIndex = 0;
 	for (; SelectedIndex < TileWeights.Num(); ++SelectedIndex)
@@ -31,12 +37,19 @@ bool UCell::Collapse()
 		CurrentWeight += TileWeights[SelectedIndex];
 		if (CurrentWeight >= RandomWeight) break;
 	}
-	SetCollapsedTile(PossibleTiles[SelectedIndex]);
-	return true;
+	
+	if (SelectedIndex >= 0 && SelectedIndex < PossibleTiles.Num())
+	{
+		SetCollapsedTile(PossibleTiles[SelectedIndex]);
+		return true;
+	}
+	return false;
 }
 
 void UCell::SetCollapsedTile(TSubclassOf<ATile> Tile)
 {
+	if (!Tile)
+		UE_LOG(LogTemp, Warning, TEXT("Failed to select a valid tile for collapsing."));
 	CollapsedTile = Tile;
 	PossibleTiles.Empty();
 	TileWeights.Empty();
@@ -45,6 +58,11 @@ void UCell::SetCollapsedTile(TSubclassOf<ATile> Tile)
 
 void UCell::SetPossibleTiles(const TArray<TSubclassOf<ATile>>& InPossibleTiles)
 {
+	for (TSubclassOf<ATile> Tile : InPossibleTiles)
+	{
+		if (!Tile)
+			UE_LOG(LogTemp, Warning, TEXT("No tile to spawn for cell at"));
+	}
 	PossibleTiles = InPossibleTiles;
 	TileWeights.Empty();
 	for (const TSubclassOf<ATile>& TileClass : PossibleTiles)

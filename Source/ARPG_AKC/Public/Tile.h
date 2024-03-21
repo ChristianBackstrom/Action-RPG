@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "ProceduralMeshComponent.h"
 #include "Tile.generated.h"
+
 
 UCLASS()
 class ARPG_AKC_API ATile : public AActor
@@ -15,23 +17,11 @@ public:
 	ATile();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
-	TArray<TSubclassOf<ATile>> AllowedAllDirectionsNeighbors;
+	int32 BaseWeight = 1;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
-	TArray<TSubclassOf<ATile>> AllowedNorthNeighbors;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
-	TArray<TSubclassOf<ATile>> AllowedEastNeighbors;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
-	TArray<TSubclassOf<ATile>> AllowedSouthNeighbors;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
-	TArray<TSubclassOf<ATile>> AllowedWestNeighbors;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tile")
-	float BaseWeight = 1.0f;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Tile", meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* StaticMesh;
+	
 	bool CanNeighbor(TSubclassOf<ATile> OtherTile, const FVector2D& DirectionToNeighbor) const;
 
 protected:
@@ -39,5 +29,29 @@ protected:
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Tile", meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* GroundMesh;
+	UProceduralMeshComponent* ProceduralMesh;
+
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Tile", meta = (AllowPrivateAccess = "true"))
+	USceneComponent* Root;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile")
+	TArray<TSubclassOf<ATile>> AllowedAllDirectionsNeighbors;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile")
+	TArray<TSubclassOf<ATile>> AllowedNorthNeighbors;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile")
+	TArray<TSubclassOf<ATile>> AllowedEastNeighbors;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile")
+	TArray<TSubclassOf<ATile>> AllowedSouthNeighbors;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile")
+	TArray<TSubclassOf<ATile>> AllowedWestNeighbors;
+
+	static float GetPerlinNoiseHeightAtLocation(float X, float Y);
+	void GenerateMesh() const;
+
+	
 };

@@ -6,14 +6,50 @@
 #include "Cell.h"
 #include "Tile.h"
 
+AWorldGenerationGameModeBase::AWorldGenerationGameModeBase()
+{
+	PrimaryActorTick.bCanEverTick = true;
+}
+
 void AWorldGenerationGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	GenerateWorld();
+	CreateGrid();
+	UCell* FirstCell = GetCell(FVector2D(GridSize / 2, GridSize / 2));
+	FirstCell->SetCollapsedTile(AllTiles[1]);
+	Propagate(FirstCell);
+	SpawnTileForCell(FirstCell);
+	IterationsLeft = GridSize * GridSize - 1;
+	bIsGenerating = true;
 }
 
-void AWorldGenerationGameModeBase::GenerateWorld()
+void AWorldGenerationGameModeBase::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	Timer++;
+	if (Timer != 20) return;
+	Timer = 0;
+	//while (bIsGenerating)
+	//{
+	//	if (!ProcessGenerationStep())
+	//	{
+	//		bIsGenerating = false;
+	//	}
+	//}
+	
+	for (int32 i = 0; i < 1; i++)
+	{
+		if (bIsGenerating)
+		{
+			if (!ProcessGenerationStep())
+			{
+				bIsGenerating = false;
+			}
+		}
+	}
+}
+
+void AWorldGenerationGameModeBase::CreateGrid()
 {
 	Grid.SetNum(GridSize);
 	for (int32 i = 0; i < GridSize; i++)
@@ -26,36 +62,45 @@ void AWorldGenerationGameModeBase::GenerateWorld()
 			Grid[i][j] = NewCell;
 		}
 	}
+}
 
-	UCell* FirstCell = GetCell(FVector2D(GridSize / 2, GridSize / 2));
-	FirstCell->SetCollapsedTile(AllTiles[0]);
-	Propagate(FirstCell);
-	SpawnTileForCell(FirstCell);
+bool AWorldGenerationGameModeBase::ProcessGenerationStep()
+{
+	TArray<UCell*> MinimumEntropyCells = GetMinimumEntropyCells();
+	int32 RandNum = FMath::RandRange(0, MinimumEntropyCells.Num() - 1);
+	UCell* LowestEntropyCell = MinimumEntropyCells[RandNum];
+	LowestEntropyCell->Collapse();
+	SpawnTileForCell(LowestEntropyCell);
+	Propagate(LowestEntropyCell);
+	CellsAdjacentToCollapsedCells.Remove(LowestEntropyCell);
+	IterationsLeft--;
+	UE_LOG(LogTemp, Warning, TEXT("%d Tiles remaining"), IterationsLeft);
+
+	return IterationsLeft > 0;
+}
+
+TArray<UCell*> AWorldGenerationGameModeBase::GetMinimumEntropyCells() const
+{
+	TArray<UCell*> MinimumEntropyCells;
+	int32 LowestEntropyValue = AllTiles.Num();
 	
-	int IterationsLeft = GridSize * GridSize - 1;
-	while(IterationsLeft > 0)
+	for (const UCell* Cell : CellsAdjacentToCollapsedCells)
 	{
-		UCell* LowestEntropyCell = nullptr;
-		for (UCell* Cell : LowerEntropyCells)
+		if (LowestEntropyValue > Cell->GetEntropy())
 		{
-			if (!LowestEntropyCell)
-			{
-				LowestEntropyCell = Cell;
-				continue;
-			}
-			if (LowestEntropyCell->GetEntropy() < Cell->GetEntropy())
-			{
-				LowestEntropyCell = Cell;
-			}
+			LowestEntropyValue = Cell->GetEntropy();
 		}
-		LowestEntropyCell->Collapse();
-		SpawnTileForCell(LowestEntropyCell);
-		Propagate(LowestEntropyCell);
-		LowerEntropyCells.Remove(LowestEntropyCell);
-		IterationsLeft--;
-		UE_LOG(LogTemp, Warning, TEXT("%d Tiles remaining"), IterationsLeft);
-		UE_LOG(LogTemp, Warning, TEXT("%d LowerEntrpyCells"), LowerEntropyCells.Num());
 	}
+
+	for (UCell* Cell : CellsAdjacentToCollapsedCells)
+	{
+		if (LowestEntropyValue == Cell->GetEntropy())
+		{
+			MinimumEntropyCells.Add(Cell);
+		}
+	}
+
+	return MinimumEntropyCells;
 }
 
 void AWorldGenerationGameModeBase::Propagate(UCell* CollapsedCell)
@@ -72,14 +117,14 @@ void AWorldGenerationGameModeBase::Propagate(UCell* CollapsedCell)
 		CellsToUpdate.Dequeue(CurrentCell);
 
 		TArray<UCell*> Neighbors = GetNeighbors(CurrentCell->GridPosition);
+		
+		
 		for (UCell* Neighbor : Neighbors)
 		{
 			if (Neighbor->bIsCollapsed || EnqueuedCells.Contains(Neighbor)) continue;
 
+			CellsAdjacentToCollapsedCells.Add(Neighbor);
 			if (ApplyDirectionalConstraints(Neighbor, CurrentCell))
-			{
-				LowerEntropyCells.Add(Neighbor);
-			}
 			{
 				CellsToUpdate.Enqueue(Neighbor);
 				EnqueuedCells.Add(Neighbor);
@@ -100,6 +145,7 @@ bool AWorldGenerationGameModeBase::ApplyDirectionalConstraints(UCell* CellToUpda
 	
 	for (TSubclassOf<ATile> PossibleTile : CellToUpdate->GetPossibleTiles())
 	{
+		if (!PossibleTile) continue;
 		if (PossibleTile.GetDefaultObject()->CanNeighbor(CollapsedNeighborCell->GetCollapsedTile(), Direction))
 		{
 			NewPossibleTiles.Add(PossibleTile);
@@ -110,7 +156,6 @@ bool AWorldGenerationGameModeBase::ApplyDirectionalConstraints(UCell* CellToUpda
 	if (bChanged)
 	{
 		CellToUpdate->SetPossibleTiles(NewPossibleTiles);
-		LowerEntropyCells.Add(CellToUpdate);
 	}
 	
 	return bChanged;
@@ -122,10 +167,10 @@ TArray<UCell*> AWorldGenerationGameModeBase::GetNeighbors(FVector2D GridPosition
 	
 	TArray Directions =
 	{
-		FVector2D(0, -1), // North
-		FVector2D(1, 0),  // East
-		FVector2D(0, 1),  // South
-		FVector2D(-1, 0), // West
+		FVector2D(1, 0), // North
+		FVector2D(0, 1),  // East
+		FVector2D(-1, 0),  // South
+		FVector2D(0, -1), // West
 	};
 
 	for (const FVector2D& Direction : Directions)
@@ -159,19 +204,21 @@ FVector2D AWorldGenerationGameModeBase::GetDirection(const FVector2D From, const
 void AWorldGenerationGameModeBase::SpawnTileForCell(const UCell* Cell) const
 {
 	if (!Cell || !Cell->bIsCollapsed) return;
+	if (Cell->GetCollapsedTile() == nullptr)
+		UE_LOG(LogTemp, Warning, TEXT("No tile to spawn for cell at %s"), *Cell->GridPosition.ToString());
+
 
 	const FVector Location = CalculateWorldLocation(Cell->GridPosition);
 	const FRotator Rotation = FRotator(0);
 
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	const ATile* Tile = GetWorld()->SpawnActor<ATile>(Cell->GetCollapsedTile(), FVector(0, 0, 0), Rotation, SpawnParameters);
 
-	GetWorld()->SpawnActor<ATile>(Cell->GetCollapsedTile(), Location, Rotation, SpawnParameters);
+	Tile->StaticMesh->SetWorldLocation(Location + Tile->StaticMesh->GetRelativeLocation());
 }
 
 FVector AWorldGenerationGameModeBase::CalculateWorldLocation(FVector2D GridPosition)
 {
-	return FVector(GridPosition.X * 100.0f, GridPosition.Y * 100.0f, 0.0f);
+	return FVector(GridPosition.X * 1200.0f, GridPosition.Y * 1200.0f, 0.0f);
 }
-
-

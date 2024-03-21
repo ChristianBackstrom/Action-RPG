@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
 #include "Cell.generated.h"
 
 class ATile;
@@ -22,7 +21,7 @@ public:
 	void Initialize(FVector2D InGridPosition, const TArray<TSubclassOf<ATile>>& AllTiles);
 	bool Collapse();
 	
-	TArray<float> GetTileWeights() const { return TileWeights; }
+	TArray<int32> GetTileWeights() const { return TileWeights; }
 	TArray<TSubclassOf<ATile>> GetPossibleTiles() const { return PossibleTiles; }
 	int32 GetEntropy() const { return Entropy; }
 	TSubclassOf<ATile> GetCollapsedTile() const { return CollapsedTile; }
@@ -32,7 +31,7 @@ public:
 	
 private:
 	TSubclassOf<ATile> CollapsedTile;
-	TArray<float> TileWeights;
+	TArray<int32> TileWeights;
 	TArray<TSubclassOf<ATile>> PossibleTiles;
 	int32 Entropy;
 };
